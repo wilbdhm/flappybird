@@ -17,7 +17,7 @@ data Bird =
 
 drawBird :: Bird -> Picture
 drawBird (Bird r y _ th) =
-    translate 0 y $
+    translate (320 / 3) y $
     scale r r $
     rotate th $
     color (dark $ dark red) $
