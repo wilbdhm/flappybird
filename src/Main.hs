@@ -5,6 +5,7 @@ import Bird
 import Pipe
 import Game
 import Debug.Trace (trace)
+import Graphics.Gloss.Interface.Pure.Game (Event(..), Key(..))
 
 main :: IO ()
 main = do
@@ -14,7 +15,7 @@ main = do
     pipes <- genpipes
     let (ps, ps2) = splitAt 3 pipes
         ps1 = zipWith updatePipe [0,120..] ps
-        initstate = Game (Bird 10 320 3 0) (ps1, ps2) 0 Paused
+        initstate = Game (Bird 12 320 (-1) 0) (ps1, ps2) 0 Playing
     play window bgcol 60 initstate render handleEvents update
 
 
@@ -24,20 +25,25 @@ render (Game bird (pipes, _) score _) =
     pictures
         [ pictures $ map drawPipe pipes
         , drawBird bird
-        , translate 10 10 $ text (show score)
+        , translate 10 10 $ scale 0.4 0.4 $ text (show score)
         ]
 
 update :: Float -> Game -> Game
 -- update _ b | trace (show b) False = undefined
-update elt game@(Game bird (cps, nps@(n:ns)) _ _) =
-    game { pipes = (pipes, pipesn) }
+update _ game@(Game _ _ _ Paused) = game
+update elt game@(Game bird@(Bird _ y vy _) (cps, nps@(n:ns)) _ _) =
+    game { pipes = (pipes, pipesn)
+         , bird = bird { vy = vy - 175 * elt, y = y + vy * elt }
+         }
   where
-    ncps = map (updatePipe (-1)) cps
+    ncps = map (updatePipe (-elt * 55)) cps
     ps = dropWhile (\(x, _) -> x < -15) ncps
     (pipes, pipesn) =
         case drop 2 ps of
             [] -> (ps ++ [n], ns)
             _  -> (ps, nps)
 
-handleEvents :: a -> Game -> Game
-handleEvents _ = id
+handleEvents :: Event -> Game -> Game
+handleEvents EventKey{} game@(Game bird _ _ _) =
+    game { bird = changeBirdVel 75 bird }
+handleEvents _ game = game
