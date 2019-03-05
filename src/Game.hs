@@ -22,4 +22,5 @@ instance Show Game where
 
 data GameState = Playing
                | Paused
+               | Ended
                deriving (Show)
