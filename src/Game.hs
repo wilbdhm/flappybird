@@ -1,6 +1,7 @@
 module Game
     ( Game(..)
     , GameState(..)
+    , birdPipeCollide
     ) where
 
 import Bird
@@ -24,3 +25,8 @@ data GameState = Playing
                | Paused
                | Ended
                deriving (Show)
+
+birdPipeCollide :: Bird -> Pipe -> Bool
+birdPipeCollide (Bird r y _ _) (px, py) =
+    x + r > px && x - r < px + 30 && y + r > py && y - r < py - 65
+  where x = 320 / 3

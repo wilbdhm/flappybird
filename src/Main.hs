@@ -20,20 +20,21 @@ main = do
 
 
 render :: Game -> Picture
-render (Game bird (pipes, _) score _) =
+render (Game bird (pipes, _) score state) =
     translate (-160) (-240) $
     pictures
         [ pictures $ map drawPipe pipes
         , drawBird bird
-        , translate 10 10 $ scale 0.4 0.4 $ text (show score)
+        , translate 10 10 $ scale 0.1 0.1 $ text (show state)
         ]
 
 update :: Float -> Game -> Game
 -- update _ b | trace (show b) False = undefined
-update _ game@(Game _ _ _ Paused) = game
-update elt game@(Game bird@(Bird _ y vy _) (cps, nps@(n:ns)) _ _) =
+update elt game@(Game bird@(Bird _ y vy _) (cps, nps@(n:ns)) score Playing) =
     game { pipes = (pipes, pipesn)
-         , bird = bird { vy = vy - 175 * elt, y = y + vy * elt }
+         , bird  = bird { vy = vy - 175 * elt, y = y + vy * elt }
+         , score = nscore
+         , state = nstate
          }
   where
     ncps = map (updatePipe (-elt * 55)) cps
@@ -42,8 +43,15 @@ update elt game@(Game bird@(Bird _ y vy _) (cps, nps@(n:ns)) _ _) =
         case drop 2 ps of
             [] -> (ps ++ [n], ns)
             _  -> (ps, nps)
+    nscore = score
+    nstate =
+        if any (birdPipeCollide bird) ps || y < 0 || y > 480
+            then Ended
+            else Playing
+update _ game = game
 
 handleEvents :: Event -> Game -> Game
-handleEvents EventKey{} game@(Game bird _ _ _) =
-    game { bird = changeBirdVel 75 bird }
+handleEvents EventKey{} game@(Game bird@(Bird _ _ vy _) _ _ _)
+    | vy < 7    = game { bird = changeBirdVel 75 bird }
+    | otherwise = game
 handleEvents _ game = game
